@@ -6,4 +6,4 @@ The config.ini file should be modified:
 
 - DB_PATH is the absolute path to the Antelope database;
 - DB_NAME is the name of the Antelope database;
-- VALIDATOR is the name of the IRIS StationXML validator (downloadable from [the official repo](https://github.com/iris-edu/stationxml-validator)) which should be placed in the same directory.
+- VALIDATOR_PATH is the absolute path to the IRIS StationXML validator (downloadable from [the official repo](https://github.com/iris-edu/stationxml-validator)).
