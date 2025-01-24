@@ -44,11 +44,11 @@ from antelope.datascope import *
 # ==================#
 # DEFINITIONS
 config = configparser.ConfigParser()
-PWD = os.getcwd()
+config.read(os.path.join(os.path.dirname(sys.argv[0]), "config.ini"))
 DB_PATH = config["DEFAULT"]["DB_PATH"]
 DB_NAME = config["DEFAULT"]["DB_NAME"]
 PROGRAM_VERSION = config["PROGRAM_INFO"]["PROGRAM_VERSION"]
-VALIDATOR = os.path.join(PWD, config["DEFAULT"]["VALIDATOR_PATH"])
+VALIDATOR = config["DEFAULT"]["VALIDATOR_PATH"]
 
 NM2M = True  # Flag to perform the conversion from nanometer to meter
 SKIPCHAN = ["CPU", "L.."]  # Channel name pattern to skip
