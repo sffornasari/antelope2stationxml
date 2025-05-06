@@ -33,6 +33,7 @@ from serviceModule import (
     PolesZeros,
     StationInfo,
 )
+import glob
 from serviceModule import iso8601DateTime, seedIdentifier, latitudeFloat, longitudeFloat
 from serviceModule import filterTable
 
@@ -44,10 +45,10 @@ from antelope.datascope import *
 # ==================#
 # DEFINITIONS
 config = configparser.ConfigParser()
-config.read(os.path.join(os.path.dirname(sys.argv[0]), "config.ini"))
+config.read(os.path.join(os.path.dirname(__file__), "config.ini"))
 DB_PATH = config["DEFAULT"]["DB_PATH"]
-DB_NAME = config["DEFAULT"]["DB_NAME"]
-PROGRAM_VERSION = config["PROGRAM_INFO"]["PROGRAM_VERSION"]
+DB_NAME_BASE = config["DEFAULT"]["DB_NAME_BASE"]
+PROGRAM_VERSION = config["PROGRAM_INFO"]["STATIONXML_VERSION"]
 VALIDATOR = config["DEFAULT"]["VALIDATOR_PATH"]
 
 NM2M = True  # Flag to perform the conversion from nanometer to meter
@@ -279,6 +280,7 @@ if args.endafter:
 
 if args.network:
     networks = args.network
+# networks = [(False, "RF")]
 if args.station:
     stations = args.station
 if args.location:
@@ -342,9 +344,9 @@ REGCHAN = [re.compile(uc) for uc in SKIPCHAN]
 
 # DB list in server (eg. 140.105.54.8) on path (eg. /home/rt/rtsystem/db/)
 # Open database in read mode
-db = dbopen(DB_PATH + DB_NAME, perm="r")
+DB_NAME = sorted(glob.glob(os.path.join(DB_PATH, f"{DB_NAME_BASE}_??_??")))[-1]
 
-# print(DB_PATH + DB_NAME)
+db = dbopen(DB_NAME, perm="r")
 
 # Prepare the table structure
 # Filter the results as-you-go, to reduce the amount of data
@@ -353,18 +355,26 @@ networkTable = db.lookup(table="network")
 # print(len(networks))
 
 if len(networks) > 0:
-    networkTable = filterTable(networkTable, "network.net", networks)
+    networkTable = filterTable(networkTable, "net", networks)
     # Per specification, networks should be filtrable by start/end date.
     # None is present in the database.
 
 # print(networkTable.find_join_tables())
-joinAffiliationTable = networkTable.process(["dbjoin affiliation"]).subset(
-    "affiliation.net == network.net"
-)
-if len(stations) > 0:
-    joinAffiliationTable = filterTable(joinAffiliationTable, "affiliation.sta", stations)
+# IF AFFILIATION TABLE IS AVAILABLE
+# joinAffiliationTable = networkTable.process(["dbjoin affiliation"]).subset(
+#     "affiliation.net == network.net"
+# )
+# if len(stations) > 0:
+#     joinAffiliationTable = filterTable(joinAffiliationTable, "affiliation.sta", stations)
+# joinSiteTable = joinAffiliationTable.process(["dbjoin site"]).subset("site.sta == affiliation.sta")
 
-joinSiteTable = joinAffiliationTable.process(["dbjoin site"]).subset("site.sta == affiliation.sta")
+joinSnetstaTable  = networkTable.theta('snetsta', 'net == snetsta.snet')
+if len(stations) > 0:
+    joinSnetstaTable  = filterTable(joinSnetstaTable , "snetsta.sta", stations)
+
+joinSiteTable = joinSnetstaTable .process(["dbjoin site"]).subset("site.sta == snetsta.sta")
+
+
 if Level[level] == Level.station:
     # As per specification, filter by date only at the specified level
     if startTime:
